@@ -1,0 +1,17 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:fintrack;MODE=MySQL;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+  jpa:
+    defer-datasource-initialization: true
+    hibernate:
+      ddl-auto: create-drop
+  sql:
+    init:
+      mode: always
+  flyway:
+    enabled: false
+app:
+  jwt:
+    secret: test-secret-test-secret-test-secret-123456

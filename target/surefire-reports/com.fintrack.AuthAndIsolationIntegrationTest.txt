@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.fintrack.AuthAndIsolationIntegrationTest
+-------------------------------------------------------------------------------
+Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 39.90 s -- in com.fintrack.AuthAndIsolationIntegrationTest
