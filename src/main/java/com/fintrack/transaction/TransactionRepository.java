@@ -31,5 +31,16 @@ public interface TransactionRepository extends JpaRepository<TransactionRecord, 
             + "group by year(t.txnDate), month(t.txnDate), t.type")
     List<Object[]> monthlyTotals(@Param("uid") Long uid, @Param("from") LocalDate from, @Param("to") LocalDate to);
 
+    @Query("select t.categoryId, sum(t.amount) from TransactionRecord t "
+            + "where t.userId = :uid and t.type = :type and t.txnDate between :from and :to group by t.categoryId")
+    List<Object[]> totalsByCategoryId(@Param("uid") Long uid, @Param("type") TransactionType type,
+                                      @Param("from") LocalDate from, @Param("to") LocalDate to);
+
+    @Query("select year(t.txnDate), month(t.txnDate), t.categoryId, sum(t.amount) from TransactionRecord t "
+            + "where t.userId = :uid and t.type = :type and t.txnDate between :from and :to "
+            + "group by year(t.txnDate), month(t.txnDate), t.categoryId")
+    List<Object[]> monthlyTotalsByCategory(@Param("uid") Long uid, @Param("type") TransactionType type,
+                                           @Param("from") LocalDate from, @Param("to") LocalDate to);
+
     long countByUserId(Long userId);
 }
