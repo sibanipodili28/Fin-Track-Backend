@@ -4,6 +4,8 @@ import com.fintrack.account.AccountService;
 import com.fintrack.common.BusinessRuleException;
 import com.fintrack.common.ResourceNotFoundException;
 import com.fintrack.goal.GoalDtos.*;
+import com.fintrack.notification.NotificationService;
+import com.fintrack.notification.NotificationType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,6 +28,7 @@ class GoalServiceTest {
     @Mock GoalRepository goals;
     @Mock ContributionRepository contributions;
     @Mock AccountService accountService;
+    @Mock NotificationService notifications;
     @InjectMocks GoalService service;
 
     SavingsGoal laptop;
@@ -67,6 +70,15 @@ class GoalServiceTest {
         GoalResponse r = service.contribute(7L, 1L, req("1000.00"));
         assertEquals(GoalStatus.COMPLETED, r.status());
         assertNotNull(laptop.getCompletedAt());
+        verify(notifications).notifyOnce(eq(7L), eq(NotificationType.GOAL_COMPLETED), any(), any(), eq("GOAL:1:DONE"));
+    }
+
+    @Test
+    void crossingHalfwayNotifiesOnce() {
+        service.contribute(7L, 1L, req("400.00"));
+        verify(notifications, never()).notifyOnce(any(), eq(NotificationType.GOAL_PROGRESS), any(), any(), any());
+        service.contribute(7L, 1L, req("150.00"));
+        verify(notifications).notifyOnce(eq(7L), eq(NotificationType.GOAL_PROGRESS), any(), any(), eq("GOAL:1:50"));
     }
 
     @Test

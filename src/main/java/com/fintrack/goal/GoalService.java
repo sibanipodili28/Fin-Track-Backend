@@ -4,6 +4,8 @@ import com.fintrack.account.AccountService;
 import com.fintrack.common.BusinessRuleException;
 import com.fintrack.common.ResourceNotFoundException;
 import com.fintrack.goal.GoalDtos.*;
+import com.fintrack.notification.NotificationService;
+import com.fintrack.notification.NotificationType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +27,7 @@ public class GoalService {
     private final GoalRepository goals;
     private final ContributionRepository contributions;
     private final AccountService accountService;
+    private final NotificationService notifications;
 
     @Transactional(readOnly = true)
     public List<GoalResponse> list(Long userId) {
@@ -84,8 +87,10 @@ public class GoalService {
         c.setNote(r.note() == null ? null : r.note().trim());
         contributions.save(c);
 
-        g.setSavedAmount(g.getSavedAmount().add(amount));
+        BigDecimal before = g.getSavedAmount();
+        g.setSavedAmount(before.add(amount));
         if (g.getSavedAmount().compareTo(g.getTargetAmount()) >= 0) markCompleted(g);
+        notifyProgress(userId, g, before);
         return GoalResponse.from(g);
     }
 
@@ -94,6 +99,7 @@ public class GoalService {
         SavingsGoal g = find(userId, id);
         requireActive(g);
         markCompleted(g);
+        notifyProgress(userId, g, g.getSavedAmount());
         return GoalResponse.from(g);
     }
 
@@ -102,6 +108,24 @@ public class GoalService {
         find(userId, id);
         return contributions.findByGoalIdAndUserIdOrderByContributionDateDescIdDesc(id, userId).stream()
                 .map(ContributionResponse::from).toList();
+    }
+
+    /** Completed: one "done" notice. Otherwise one notice when 50% or 75% is crossed. */
+    private void notifyProgress(Long userId, SavingsGoal g, BigDecimal before) {
+        if (g.getStatus() == GoalStatus.COMPLETED) {
+            notifications.notifyOnce(userId, NotificationType.GOAL_COMPLETED, "Goal completed",
+                    "You completed your goal \"" + g.getName() + "\".", "GOAL:" + g.getId() + ":DONE");
+            return;
+        }
+        for (int pct : new int[]{75, 50}) {
+            BigDecimal line = g.getTargetAmount().multiply(BigDecimal.valueOf(pct));
+            if (before.multiply(BigDecimal.valueOf(100)).compareTo(line) < 0
+                    && g.getSavedAmount().multiply(BigDecimal.valueOf(100)).compareTo(line) >= 0) {
+                notifications.notifyOnce(userId, NotificationType.GOAL_PROGRESS, g.getName() + " is " + pct + "% funded",
+                        "You have set aside " + g.getSavedAmount() + " of " + g.getTargetAmount() + ".", "GOAL:" + g.getId() + ":" + pct);
+                return;
+            }
+        }
     }
 
     private void markCompleted(SavingsGoal g) {

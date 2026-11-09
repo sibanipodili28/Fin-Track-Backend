@@ -13,5 +13,7 @@ spring:
   flyway:
     enabled: false
 app:
+  scheduling:
+    enabled: false
   jwt:
     secret: test-secret-test-secret-test-secret-123456
