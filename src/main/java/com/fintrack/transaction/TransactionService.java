@@ -3,6 +3,7 @@ package com.fintrack.transaction;
 import com.fintrack.account.Account;
 import com.fintrack.account.AccountRepository;
 import com.fintrack.account.AccountService;
+import com.fintrack.budget.BudgetAlertService;
 import com.fintrack.category.Category;
 import com.fintrack.category.CategoryRepository;
 import com.fintrack.common.BusinessRuleException;
@@ -32,6 +33,7 @@ public class TransactionService {
     private final AccountService accountService;
     private final AccountRepository accounts;
     private final CategoryRepository categories;
+    private final BudgetAlertService budgetAlerts;
 
     @Transactional
     public TransactionResponse create(Long userId, TransactionRequest r) {
@@ -48,7 +50,9 @@ public class TransactionService {
         TransactionRecord t = new TransactionRecord();
         t.setUserId(userId);
         fill(t, r, amount);
-        return toResponses(List.of(transactions.save(t))).get(0);
+        TransactionRecord saved = transactions.save(t);
+        if (r.type() == TransactionType.EXPENSE) budgetAlerts.checkAfterExpense(userId, r.categoryId(), r.date());
+        return toResponses(List.of(saved)).get(0);
     }
 
     @Transactional
@@ -77,6 +81,7 @@ public class TransactionService {
         newAcc.assertNotOverdrawn();
 
         fill(t, r, amount);
+        if (r.type() == TransactionType.EXPENSE) budgetAlerts.checkAfterExpense(userId, r.categoryId(), r.date());
         return toResponses(List.of(t)).get(0);
     }
 
