@@ -49,6 +49,5 @@ public interface TransactionRepository extends JpaRepository<TransactionRecord, 
 
     List<TransactionRecord> findByUserIdAndAccountIdAndTxnDateBetweenOrderByTxnDateAscIdAsc(
             Long userId, Long accountId, LocalDate from, LocalDate to, Pageable pageable);
-
     long countByUserId(Long userId);
 }
