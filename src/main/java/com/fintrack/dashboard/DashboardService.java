@@ -54,7 +54,7 @@ public class DashboardService {
                 byCategory, trend(userId, from, to));
     }
 
-    private List<MonthlyPoint> trend(Long userId, LocalDate from, LocalDate to) {
+    public List<MonthlyPoint> trend(Long userId, LocalDate from, LocalDate to) {
         Map<YearMonth, BigDecimal[]> buckets = new TreeMap<>();
         for (YearMonth m = YearMonth.from(from); !m.isAfter(YearMonth.from(to)); m = m.plusMonths(1)) {
             buckets.put(m, new BigDecimal[]{BigDecimal.ZERO, BigDecimal.ZERO});

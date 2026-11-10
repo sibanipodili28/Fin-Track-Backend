@@ -62,6 +62,14 @@ public class AccountService {
         lockOwned(userId, id).setActive(false);
     }
 
+    /** Net worth: money held in active asset accounts minus amounts owed on active credit cards. */
+    @Transactional(readOnly = true)
+    public BigDecimal netWorth(Long userId) {
+        return accounts.findByUserIdOrderByCreatedAtDesc(userId).stream().filter(Account::isActive)
+                .map(a -> a.isCreditCard() ? a.getCurrentBalance().negate() : a.getCurrentBalance())
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
     /** Loads an account owned by the user with a write lock. Other users' accounts look like "not found". */
     @Transactional
     public Account lockOwned(Long userId, Long id) {
